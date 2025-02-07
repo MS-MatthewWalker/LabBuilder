@@ -18,13 +18,17 @@ stages:
       - job: Build_Module
         displayName: 'Build Module'
         pool:
-          vmImage: ubuntu-16.04
+          vmImage: ubuntu-latest
         steps:
-          - task: GitVersion@5
-            name: gitversion
+          - task: gittools.gittools.setup-gitversion-task.gitversion/setup@0
+            displayName: 'Setup GitVersion'
+            inputs:
+              versionSpec: 5.x
+
+          - task: gittools.gittools.execute-gitversion-task.gitversion/execute@0
             displayName: 'Evaluate Next Version'
             inputs:
-              runtime: 'core'
+              useConfigFile: true
               configFilePath: 'GitVersion.yml'
 
           - task: PowerShell@2
@@ -47,49 +51,6 @@ stages:
   - stage: Test
     dependsOn: Build
     jobs:
-      - job: Unit_Test_PS_Win2016
-        displayName: 'Unit Test (Powershell 5.1 on Windows Server 2016)'
-        pool:
-          vmImage: vs2017-win2016
-
-        steps:
-          - powershell: |
-              $repositoryOwner,$repositoryName = $env:BUILD_REPOSITORY_NAME -split '/'
-              echo "##vso[task.setvariable variable=RepositoryOwner;isOutput=true]$repositoryOwner"
-              echo "##vso[task.setvariable variable=RepositoryName;isOutput=true]$repositoryName"
-            name: moduleBuildVariable
-            displayName: 'Set Environment Variables'
-
-          - task: DownloadBuildArtifacts@0
-            displayName: 'Download Build Artifact'
-            inputs:
-              buildType: 'current'
-              downloadType: 'single'
-              artifactName: 'output'
-              downloadPath: '$(Build.SourcesDirectory)'
-
-          - task: PowerShell@2
-            name: test
-            displayName: 'Run Unit Test'
-            inputs:
-              filePath: './build.ps1'
-              arguments: "-tasks test -PesterScript 'tests/Unit'"
-
-          - task: PublishTestResults@2
-            displayName: 'Publish Test Results'
-            inputs:
-              testResultsFormat: 'NUnit'
-              testResultsFiles: 'output/testResults/NUnit*.xml'
-              testRunTitle: 'Unit (PowerShell 5.1 on Windows Server 2016)'
-
-          - task: PublishCodeCoverageResults@1
-            displayName: 'Publish Code Coverage'
-            condition: succeededOrFailed()
-            inputs:
-              codeCoverageTool: 'JaCoCo'
-              summaryFileLocation: 'output/testResults/CodeCov*.xml'
-              pathToSources: '$(Build.SourcesDirectory)/output/$(moduleBuildVariable.RepositoryName)'
-
       - job: Unit_Test_PS_Win2019
         displayName: 'Unit Test (Powershell 5.1 on Windows Server 2019)'
         pool:
@@ -143,14 +104,14 @@ stages:
           eq(variables['Build.SourceBranch'], 'refs/heads/main'),
           startsWith(variables['Build.SourceBranch'], 'refs/tags/')
         ),
-        eq(variables['System.TeamFoundationCollectionUri'], 'https://dscottraynsford.visualstudio.com/'),
+        eq(variables['System.TeamFoundationCollectionUri'], 'https://dev.azure.com/dscottraynsford/'),
         endsWith(variables['Build.DefinitionName'],'main')
       )
     jobs:
       - job: Deploy_Module
         displayName: 'Deploy Module'
         pool:
-          vmImage: ubuntu-16.04
+          vmImage: ubuntu-latest
 
         steps:
           - task: DownloadBuildArtifacts@0
@@ -171,6 +132,8 @@ stages:
             env:
               GitHubToken: $(GitHubToken)
               GalleryApiToken: $(GalleryApiToken)
+              ReleaseBranch: main
+              MainGitBranch: main
 
           - task: PowerShell@2
             name: send_changelog_PR
@@ -181,3 +144,5 @@ stages:
               pwsh: true
             env:
               GitHubToken: $(GitHubToken)
+              ReleaseBranch: main
+              MainGitBranch: main

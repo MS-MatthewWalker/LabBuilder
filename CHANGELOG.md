@@ -9,6 +9,49 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Convert build pipeline to use GitTools Azure DevOps extension tasks
+  instead of deprecated GitVersion extension.
+- Updated pipeline to use `ubuntu-latest` images for build and deploy stages.
+- Removed automated testing for Windows Server 2016 to eliminate use of
+  deprecated Azure DevOps `ws2016-v2017` agents - fixes [Issue #384](https://github.com/PlagueHO/LabBuilder/issues/384).
+- Fixed incorrect parameter name passed to `New-Object -TypeName System.Management.Automation.PSCredential`
+  in `DC_SECONDARY.DSC.ps1` DSC template
+
+### Fixed
+
+- Fix CI pipeline deployment stage to ensure correctly detects running
+  in Azure DevOps organization.
+
+## [1.2.0] - 2020-11-14
+
+### Fixed
+
+- Fix build problems preventing help from being compiled and added
+  to the module.
+
+### Changed
+
+- Update sample labs for Windows Server 2019 to use latest
+  evaluation ISO download URIs and edition names.
+- Removed sample `samples\Sample_WS2019_NanoDomain.xml` because it
+  is not valid for Windows Server 2019.
+- Improve structure of `Invoke-LabSample.ps1` function to remove need
+  for `$script` scope variables.
+- Fixed sample `samples\Sample_WS2019_AzureADConnect.xml` default gateway
+  for SA-AADC VM.
+- `dsclibrary\MEMBER_AADC.DSC.ps1`: Created DSC config for deploying an
+  Azure AD Connect server.
+- `dsclibrary\MEMBER_WAC.DSC.ps1`: Created DSC config for deploying a
+  Windows Administration Center server.
+
+### Fixes
+
+- Fixed GitVersion to prevent build failures
+
+## [1.1.0] - 2020-08-30
+
+### Changed
+
 - Renamed `LabBuilder_LocalizedData.psd1` to `LabBuilder.strings.psd1` to
   align to other PowerShell modules.
 - Convert all DSC configurations to use ComputerManagementDsc version
